@@ -2,40 +2,21 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"hcd/sensor"
 	"math"
 	"os/exec"
 	"strconv"
 	"time"
-
-	"go.bug.st/serial"
 )
 
 func main() {
-	mode := &serial.Mode{
-		BaudRate: 9600,
-	}
-	port, err := serial.Open("/dev/ttyUSB0", mode)
-	if err != nil {
-		log.Fatal(err)
-	}
-	update := time.NewTicker(5 * time.Second)
+	sensor.Open()
 	var prev float64
+	update := time.NewTicker(5 * time.Second)
 	for {
-		time.Sleep(time.Millisecond * 5)
-		var val float64
-		n, err := fmt.Fscanf(port, "%f\n", &val)
-		if err != nil {
-			log.Println(err)
-			continue
-		}
-		if n == 0 {
-			fmt.Println("\nEOF")
-			continue
-		}
+		val := sensor.Read()
 		if val == 0 || math.Abs(val-prev) < 1 {
 			prev = val
-			fmt.Println("not much difference, ignored")
 			continue
 		}
 		prev = val
@@ -43,29 +24,32 @@ func main() {
 		case <-update.C:
 			fmt.Printf("set brightness to %3.3f (raw)\n", val)
 			for i := 1; i <= 3; i++ {
-				br := int(val / 280 * maxForMonitor(i))
+				m, max := tuneForMonitor(i)
+				br := int(val * m / 280 * max)
+				if br > int(max) {
+					br = int(max)
+				}
 				fmt.Printf("mon %d val %d \n", i, br)
 				if err := ddiset(i, br); err != nil {
 					fmt.Printf("error changing brightness on mon %d (%d): %s\n", i, br, err)
 				}
 				time.Sleep(time.Millisecond * 20)
 			}
-		default:
 		}
 	}
 }
 
 // another hack
-func maxForMonitor(mon int) float64 {
+func tuneForMonitor(mon int) (mult, max float64) {
 	switch mon {
 	case 1: // NEC 24"
-		return 7000
+		return 1.5, 7000
 	case 2: // LG 38"
-		return 100
+		return 1, 100
 	case 3: // NEC 27"
-		return 100
+		return 1, 100
 	default:
-		return 100
+		return 1, 100
 	}
 }
 

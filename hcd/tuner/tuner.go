@@ -79,11 +79,11 @@ func ddiset(mon int, b int) error {
 func tuneForMonitor(mon int) (mult, max float64) {
 	switch mon {
 	case 1: // NEC 24"
-		return 1.5, 7000
+		return 3.0, 7000
 	case 2: // LG 38"
-		return 1, 100
+		return 1.1, 100
 	case 3: // NEC 27"
-		return 1, 100
+		return 1.3, 100
 	default:
 		return 1, 100
 	}

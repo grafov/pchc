@@ -37,6 +37,9 @@ func Setup() {
 					prevBr = br
 					count = 0 // получение нового значения останавливает ретраи старого
 				default:
+					if checkRunningLocker() {
+						continue
+					}
 					// когда нет свежих значений в канале, обновляем яркость
 					switch {
 					case count > 50:
@@ -52,7 +55,7 @@ func Setup() {
 							count = 0
 						}
 					}
-					time.Sleep(3 * time.Second) // установка яркости не чаще этого периода
+					time.Sleep(5 * time.Second) // установка яркости не чаще этого периода
 				}
 			}
 		}(mon, i+1)
@@ -79,11 +82,11 @@ func ddiset(mon int, b int) error {
 func tuneForMonitor(mon int) (mult, max float64) {
 	switch mon {
 	case 1: // NEC 24"
-		return 3.0, 7000
+		return 4.5, 7000
 	case 2: // LG 38"
-		return 1.1, 100
+		return 1.2, 100
 	case 3: // NEC 27"
-		return 1.3, 100
+		return 1.2, 100
 	default:
 		return 1, 100
 	}
